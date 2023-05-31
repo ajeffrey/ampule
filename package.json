@@ -1,0 +1,14 @@
+{
+  "name": "ampule",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "node esbuild.mjs --watch"
+  },
+  "dependencies": {
+    "esbuild": "^0.17.19",
+    "esbuild-svelte": "^0.7.3",
+    "svelte": "^3.59.1",
+    "svelte-preprocess": "^5.0.4"
+  }
+}
