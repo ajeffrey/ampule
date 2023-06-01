@@ -17,25 +17,27 @@ import Output from "./Output.svelte";
   export function createNode(e, nodeType) {
     e.preventDefault();
     const bb = e.target.getBoundingClientRect();
+    const offX = e.clientX - bb.left;
+    const offY = e.clientY - bb.top;
     state = {
       type: 'dragging',
-      offX: e.clientX - bb.left,
-      offY: e.clientY - bb.top,
-      x: e.clientX,
-      y: e.clientY,
+      offX,
+      offY,
+      x: e.clientX - offX,
+      y: e.clientY - offY,
       component: nodeType,
     }
   }
 
   export function updatePosition(e) {
-    state.x = e.clientX;
-    state.y = e.clientY;
+    state.x = e.clientX - state.offX;
+    state.y = e.clientY - state.offY;
   }
 
   export function insertNode() {
     nodes = [...nodes, {
-      x: state.x - state.offX,
-      y: state.y - state.offY,
+      x: state.x,
+      y: state.y,
       component: state.component,
     }];
 
@@ -48,17 +50,41 @@ import Output from "./Output.svelte";
     nodes = nodes;
     
     const bb = e.target.getBoundingClientRect();
+    const offX = e.clientX - bb.left;
+    const offY = e.clientY - bb.top;
+    console.log('movenode')
+
     state = {
       type: 'dragging',
-      offX: e.clientX - bb.left,
-      offY: e.clientY - bb.top,
-      x: e.clientX,
-      y: e.clientY,
+      offX,
+      offY,
+      x: e.clientX - offX,
+      y: e.clientY - offY,
       component: node.component,
     }
   }
 
+  let draggedNode = null;
+  let svgEvents = {};
 
+  $: {
+    switch(state?.type) {
+      case 'dragging': {
+        draggedNode = state;
+        svgEvents = {
+          'pointermove': updatePosition,
+          'pointerup': insertNode
+        };
+        console.log('dragging')
+        break;
+      }
+      default: {
+        draggedNode = null;
+        svgEvents = {};
+        break;
+      }
+    }
+  }
   
 </script>
 {#if context}
@@ -68,26 +94,18 @@ import Output from "./Output.svelte";
         <div class="node-type" on:pointerdown={e => createNode(e, nodeType)}>{nodeType.name}</div>
       {/each}
     </div>
-      {#if !state}
-      <svg>
+      <svg on:pointerup={svgEvents.pointerup} on:pointermove={svgEvents.pointermove}>
+        {#if draggedNode}
+          <Box x={draggedNode.x} y={draggedNode.y} component={draggedNode.component} isGhost={true}>
+            <svelte:component this={draggedNode.component} context={context} />
+          </Box>
+        {/if}
         {#each nodes as node}
         <Box x={node.x} y={node.y} component={node.component} onDrag={e => moveNode(e, node)}>
           <svelte:component this={node.component} context={context} />
         </Box>
         {/each}
       </svg>
-      {:else if state?.type === 'dragging'}
-      <svg on:pointermove={updatePosition} on:pointerup={insertNode}>
-        <Box x={state.x - state.offX} y={state.y - state.offY} component={state.component}>
-          <svelte:component this={state.component} context={context} />
-        </Box>
-        {#each nodes as node}
-        <Box x={node.x} y={node.y} component={node.component}>
-          <svelte:component this={node.component} context={context} />
-        </Box>
-        {/each}
-      </svg>
-      {/if}
   </div>
 {:else}
   <button on:click={startContext}>go</button>
@@ -100,6 +118,7 @@ import Output from "./Output.svelte";
     font-family: sans-serif;
     position: relative;
     background: #eee;
+    touch-action: none;
   }
   .node-types {
     min-height: 40px;
