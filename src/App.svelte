@@ -6,9 +6,12 @@
   import Source from "./nodes/Source.svelte";
   import Meter from './nodes/Meter.svelte';
   import FFT from './nodes/FFT.svelte';
+  import Player from './nodes/Player.svelte';
   import Wire from './Wire.svelte';
+  import Distortion from './nodes/Distortion.svelte';
+  import Switch from './nodes/Switch.svelte';
 
-  const nodeTypes = [Source, Meter, FFT, Output];
+  const nodeTypes = [Source, Meter, FFT, Output, Player, Distortion, Switch];
   let nodes = [];
   let wires = [];
   let draggedNode = null;
@@ -16,8 +19,10 @@
   let started = false;
 
   async function startContext() {
-    await Tone.start();
-    started = true;
+    if(!Tone.started) {
+      await Tone.start();
+      started = true;
+    }
   }
 
   function createNode(e, nodeType) {
@@ -122,39 +127,38 @@
     }
   }
 </script>
-{#if started}
-  <div class="layout">
-    <div class="node-types-outer">
-      <div class="node-types">
-      {#each nodeTypes as nodeType}
-        <div class="node-type" on:pointerdown={e => createNode(e, nodeType)}>{nodeType.name}</div>
-      {/each}
-    </div>
-    </div>
-      <svg on:pointerup={pointerUp} on:pointermove={pointerMove}>
-        {#if draggedWire}
-          <Wire from={draggedWire.from} to={draggedWire.to} />
-        {/if}
-        {#each wires as wire}
-          <Wire from={wire.from} to={wire.to} />
-        {/each}
-        {#each nodes as node}
-          <Box
-            x={node.x}
-            y={node.y}
-            component={node.component}
-            on:dragstart={e => moveNode(e, node)}
-            on:startwire={e => startWire(e, node)}
-            on:pointeroverport={e => pointerOverPort(e, node)}
-            isGhost={node.isGhost}
-          />
-        {/each}
-      </svg>
+<div class="layout">
+  <div class={`overlay${started ? ' overlay-hidden' : ''}`} on:click={startContext} on:keydown={startContext}>
+    <i class={`fa fa-${started ? 'unlock' : 'lock'}`} />
   </div>
-{:else}
-  <button on:click={startContext}>go</button>
-{/if}
-<style>
+  <div class="node-types-outer">
+    <div class="node-types">
+    {#each nodeTypes as nodeType}
+      <div class="node-type" on:pointerdown={e => createNode(e, nodeType)}>{nodeType.name}</div>
+    {/each}
+  </div>
+  </div>
+    <svg on:pointerup={pointerUp} on:pointermove={pointerMove}>
+      {#if draggedWire}
+        <Wire from={draggedWire.from} to={draggedWire.to} />
+      {/if}
+      {#each wires as wire}
+        <Wire from={wire.from} to={wire.to} />
+      {/each}
+      {#each nodes as node}
+        <Box
+          x={node.x}
+          y={node.y}
+          component={node.component}
+          on:dragstart={e => moveNode(e, node)}
+          on:startwire={e => startWire(e, node)}
+          on:pointeroverport={e => pointerOverPort(e, node)}
+          isGhost={node.isGhost}
+        />
+      {/each}
+    </svg>
+</div>
+<style lang="scss">
   .layout {
     height: 100%;
     display: flex;
@@ -163,6 +167,25 @@
     position: relative;
     background: url(https://www.toptal.com/designers/subtlepatterns/uploads/denim.png);
     touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    opacity: 1;
+    transition: opacity 0.25s; 
+    text-align: center;
+    line-height: 100vh;
+    font-size: 100px;
+    color: rgba(255, 255, 255, 0.25);
+    &-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
   }
   .node-types {
     min-height: 40px;

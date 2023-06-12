@@ -18,9 +18,10 @@
 
 </script>
 <div class="columns">
-  {#each values as value}
-    <div class="column" style={`height: ${100 / highestSeen * value}%`} />
-  {/each}
+  <div class="highest">{highestSeen.toFixed(3)}</div>
+    {#each values as value}
+      <div class="column" style={`height: ${value * 100}%`} />
+    {/each}
 </div>
 <style>
   .columns {
@@ -30,6 +31,14 @@
     align-items: flex-end;
     background: white;
     height: 100px;
+    position: relative;
+  }
+  .highest {
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    color: black;
+    font-size: 12px;
   }
   .column {
     flex-grow: 1;

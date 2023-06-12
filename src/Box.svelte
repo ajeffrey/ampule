@@ -1,5 +1,5 @@
-<script>
-  import { afterUpdate, createEventDispatcher } from "svelte";
+<script lang="typescript">
+  import { SvelteComponent, afterUpdate, createEventDispatcher } from "svelte";
   import { TYPE_COLOURS } from "./constants";
 
   export let x;
@@ -12,9 +12,12 @@
   let parent;
   let width = 200;
   let height = 10;
-  let instance;
+  let instance: SvelteComponent;
   let container;
-  let dimensionsFixed = false;
+  let observer: ResizeObserver;
+  let renaming = false;
+  let name = component.name;
+  let title;
 
   $: rootClass = isGhost ? 'is-ghost' : "";
 
@@ -28,6 +31,15 @@
 
   function onPointerOverPort(e, port) {
     dispatch('pointeroverport', { e, port });
+  }
+
+  function startRename() {
+    renaming = true;
+    title.focus();
+  }
+
+  function stopRename() {
+    renaming = false;
   }
 
   $: {
@@ -47,10 +59,9 @@
   }
 
   afterUpdate(() => {
-    if (parent && container && !dimensionsFixed) {
+    if (parent && container) {
       setTimeout(() => {
         const bb = parent.getBoundingClientRect();
-        dimensionsFixed = true;
         width = bb.width;
         container.setAttribute("width", bb.width + 20);
         height = bb.height;
@@ -58,6 +69,22 @@
       });
     }
   });
+
+  $: {
+    console.log('renaming', renaming);
+    if(parent && !observer) {
+      observer = new ResizeObserver(() => {
+        const bb = parent.getBoundingClientRect();
+        width = bb.width;
+        container.setAttribute("width", bb.width + 20);
+        height = bb.height;
+        container.setAttribute("height", bb.height + 20);
+        console.log('resize');
+      });
+
+      observer.observe(parent);
+    }
+  }
 </script>
 
 <foreignObject
@@ -69,8 +96,16 @@
   height={height + 20}
 >
   <div class="container" bind:this={parent}>
-    <div class="title" on:pointerdown={onDragStart}>
-      <div class="title-inner">{component.name}</div>
+    <div class="title" data-value={name} on:pointerdown={onDragStart} on:dblclick={startRename}>
+      <input
+        type="text"
+        class={`title-inner${renaming ? '' : ' readonly'}`}
+        size={1}
+        bind:value={name}
+        bind:this={title}
+        readonly={!renaming}
+        on:blur={stopRename}
+      />
     </div>
     <div class="body">
       <div class="ports">
@@ -106,14 +141,34 @@
   font-size: 14px;
 }
 .title {
-  cursor: move;
-  display: inline-block;
+  display: inline-grid;
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.25);
   &-inner {
     position: relative;
     z-index: 2;
     background: #fff;
     padding: 5px 10px;
+    border: none;
+    &.readonly {
+      cursor: move;
+    }
+  }
+  
+  &::after {
+    content: attr(data-value) ' ';
+    visibility: hidden;
+    white-space: pre-wrap;
+  }
+  &::after,&-inner {
+    width: auto;
+    min-width: 1em;
+    grid-area: 1 / 2;
+    font: inherit;
+    padding: 5px 10px;
+    margin: 0;
+    resize: none;
+    appearance: none;
+    border: none;
   }
 }
 .body {

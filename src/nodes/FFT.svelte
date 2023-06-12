@@ -1,7 +1,7 @@
 <script>
   import { FFT } from 'tone';
 
-  const fft = new FFT({ size: 64, smoothing: 0, normalRange: true });
+  const fft = new FFT({ size: 64, smoothing: 0.1, normalRange: true });
 
   let values = fft.getValue();
   
@@ -16,7 +16,7 @@
 </script>
 <div class="columns">
   {#each values as val}
-  <div class="column" style={`height: ${val}%`} />
+  <div class="column" style={`height: ${val * 100}%`} />
   {/each}
 </div>
 <style>
