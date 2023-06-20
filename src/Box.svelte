@@ -12,7 +12,7 @@
   let parent;
   let width = 200;
   let height = 10;
-  let instance: SvelteComponent;
+  let ports;
   let container;
   let observer: ResizeObserver;
   let renaming = false;
@@ -43,18 +43,15 @@
   }
 
   $: {
-    if(x && y && instance) {
-      for(const port of instance.ports) {
+    if(x && y && ports) {
+      for(const port of ports) {
         if(port.el) {
-          console.log('el');
           const bb = port.el.getBoundingClientRect();
           port.y = bb.top + bb.height / 2;
           port.x = port.dir === 'input' ? bb.left : bb.right;
-        } else {
-          console.log('no el?');
         }
       }
-      instance = instance;
+      ports = ports;
     }
   }
 
@@ -71,7 +68,6 @@
   });
 
   $: {
-    console.log('renaming', renaming);
     if(parent && !observer) {
       observer = new ResizeObserver(() => {
         const bb = parent.getBoundingClientRect();
@@ -79,7 +75,6 @@
         container.setAttribute("width", bb.width + 20);
         height = bb.height;
         container.setAttribute("height", bb.height + 20);
-        console.log('resize');
       });
 
       observer.observe(parent);
@@ -109,8 +104,8 @@
     </div>
     <div class="body">
       <div class="ports">
-        {#if instance}
-          {#each instance.ports || [] as port}
+        {#if ports?.length}
+          {#each ports as port}
             <div
               class={`port port-${port.dir}`}
               style={`--type-color: ${TYPE_COLOURS[port.type]}`}
@@ -125,7 +120,7 @@
         {/if}
       </div>
       <div class="contents">
-        <svelte:component this={component} bind:this={instance} />
+        <svelte:component this={component} bind:ports={ports} />
       </div>
     </div>
   </div>

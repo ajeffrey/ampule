@@ -30,6 +30,10 @@
   const output = { dir: 'output', name: 'audio', type: 'audio', source };
   export const ports = [output];
 
+  source.onstop = () => {
+    playState.playing = false;
+  }
+
   function setUrl(e) {
     inputState = { mode: 'url', value: e.target.value };
   }
@@ -64,15 +68,12 @@
 
   function start() {
     source.start();
-    console.log(source);
     playState.playing = true;
     requestAnimationFrame(updateScrubber);
   }
 
   function stop() {
     source.stop();
-    console.log(source);
-    playState.playing = false;
   }
 
   function formatTime(secs: number) {
@@ -95,29 +96,40 @@
       requestAnimationFrame(updateScrubber);
     }
   }
+
+  $: {
+    if(playState) {
+      source.loop = playState.looping;
+    }
+  }
 </script>
 <div class="iface">
   {#if playState}
-    <div class="scrubber">
-      <div class="scrubber-line">
-        <div class="scrubber-played" style={`width: ${100 / playState.duration * playState.time}%`}>
-          <div class="scrubber-handle" />
+    {#if false}
+      <div class="scrubber">
+        <div class="scrubber-line">
+          <div class="scrubber-played" style={`width: ${100 / playState.duration * playState.time}%`}>
+            <div class="scrubber-handle" />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="time">
-      <div class="elapsed">{formatTime(playState.time)}</div>
-      <div class="duration">{formatTime(playState.duration)}</div>
-    </div>
+      <div class="time">
+        <div class="elapsed">{formatTime(playState.time)}</div>
+        <div class="duration">{formatTime(playState.duration)}</div>
+      </div>
+    {/if}
     {#if playState.playing}
       <button class="ctrl ctrl-stop" on:click={stop}><i class="fa fa-stop" /></button>
     {:else}
       <button class="ctrl ctrl-play" on:click={start}><i class="fa fa-play" /></button>
     {/if}
+    <label class="loop-label">
+      <input type="checkbox" bind:checked={playState.looping} /> loop
+    </label>
   {:else}
     <form class="input" on:submit={setAudio}>
       <div class="options">
-        <input class="url" type="url" value={display} on:change={setUrl} />
+        <input class="url" type={inputState.mode === 'url' ? 'url' : 'text'} value={display} on:change={setUrl} />
         <label for="file" class="filebtn"><i class="fa fa-upload" /></label>
         <input type="file" id="file" on:change={uploadFile} />
       </div>

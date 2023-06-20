@@ -1,8 +1,8 @@
 <script>
-  import { Distortion } from 'tone';
+  import { Delay } from 'tone';
 
-  let level = 0.8;
-  const effect = new Distortion(0.8);
+  let delay = 0.8;
+  const effect = new Delay(0.25);
   
   export const ports = [
     { dir: 'input', name: 'input', type: 'audio', sink: effect },
@@ -10,19 +10,18 @@
   ];
 
   $: {
-    if(level >= 0 && level <= 1) {
-      effect.distortion = level;
+    if(delay >= 0) {
+      effect.delay = delay;
     }
   }
 </script>
 <div class="options">
   <input
     type="number"
-    class="distortion"
+    class="delay"
     inputmode="decimal"
     min={0}
-    max={1}
-    bind:value={level}
+    bind:value={delay}
   />
 </div>
 
@@ -31,7 +30,7 @@
     display: flex;
     flex-direction: row;
   }
-  .distortion {
+  .delay {
     border: none;
     border-radius: 0;
     border-right: none;
